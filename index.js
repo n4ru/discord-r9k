@@ -18,8 +18,12 @@ const config = {
     'drole': "UNMUTED_ROLE",
     // Server ID
     'guild': "SERVER_ID",
-    // Admin
-    'admin': "ADMIN_ID"
+    // Check edited messages
+    'edits': true,
+    // Anonymize Message Storage
+    'anon': true,
+    // Moderators
+    'mods': ["MOD1_ID", "MOD2_ID"]
 }
 
 // Login
@@ -40,19 +44,20 @@ const filter = (msg) => {
         new Set(
             msg.content
                 .toLowerCase() // Cast to lowercase
-                .trim() // Whitespace
                 .replace(/<(?:[^\d>]+|:[A-Za-z0-9]+:)\w+>/g, '') // Discord Tags
                 .replace(/[^a-z]/g, ''))) // All remaining non-alphas
-        .join('')
+        .join('') // Break down alphas into single occurrence letters (26! possible combinations)
 }
 
 const hash = (msg) => {
     return crypto.createHmac('sha256',
-        filter(msg)) // Break down alphas into single occurrence letters (26! possible combinations)
-        .digest('hex');
+        filter(msg))
+        .digest('hex') // Return Hex
+        .substring(0, 26); // Only keep 26 characters because seed cannot be longer anyway and SHA256 is uniformly distributed
 }
 
-const mute = (msg, ) => {
+const mute = (msg) => {
+    let seq = config.anon ? hash(msg) : filter(msg)
     let id = msg.author.id;
     db.nonce[id] = db.nonce[id] ? db.nonce[id] + 1 : 1;
     let timeout = (config.timeout * Math.pow(config.timeoutMultiplier, db.nonce[id]))
@@ -60,7 +65,7 @@ const mute = (msg, ) => {
     msg.member.addRole(config.role);
     msg.member.removeRole(config.drole);
     msg.delete();
-    console.log(`${id} muted for ${timeout} seconds. Letter sequence: ${filter(msg)}`)
+    console.log(`${id} muted for ${timeout} seconds. Stored: ${seq}`)
     try { msg.author.send(`You have been muted for ${timeout} seconds for sending a non-unique message.`) } catch (e) { }
 }
 
@@ -92,29 +97,31 @@ const check = (msg) => {
     if (msg.channel.id != config.channel) return;
 
     // Check if the message was unique
-    let seq = filter(msg);
+    let seq = config.anon ? hash(msg) : filter(msg);
     if (!db.messages[seq]) {
-        console.log(`Letter sequence stored: ${seq}`);
+        console.log(`Stored: ${seq}`);
         db.messages[seq] = true;
         return;
     }
-    msg.content.includes("!mute")
+
     // Mute the user
-    if (msg.author.id != config.admin) mute(msg);
+    if (!config.mods.includes(msg.author.id)) mute(msg);
 }
 
 // Check New Messages and Edited Messages
 client.on('message', msg => {
-    if (msg.author.id == config.admin) {
+    if (config.mods.includes(msg.author.id)) {
         if (msg.content.includes("!mute")) forceMute(msg, tagRegex(msg));
         if (msg.content.includes("!nonce")) nonceSet(msg, tagRegex(msg));
         if (msg.content.includes("!unmute")) unmute(msg, tagRegex(msg));
     }
     check(msg);
 });
-client.on('messageUpdate', msg => {
-    check(msg);
-});
+
+if (config.edits)
+    client.on('messageUpdate', msg => {
+        check(msg);
+    });
 
 // Clear Bans
 setInterval(() => {
