@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const db = new fluidb('r9k');
 
 const config = {
-    // Half the initial ban time in seconds
+    // Initial ban time in seconds divide by the timeoutMultiplier
     'timeout': 2,
     // Multiplier per subsequent ban,
     'timeoutMultiplier': 2,
@@ -23,7 +23,11 @@ const config = {
     // Anonymize Message Storage
     'anon': true,
     // Moderators
-    'mods': ["MOD1_ID", "MOD2_ID"]
+    'mods': ["MOD1_ID", "MOD2_ID"],
+    // Nonce Decay Time (in hours)
+    'nonce': 6,
+    // Nonce Decay Amount
+    'decay': 1
 }
 
 // Login
@@ -74,7 +78,7 @@ const forceMute = (msg, id) => {
     let timeout = (config.timeout * Math.pow(config.timeoutMultiplier, db.nonce[id]))
     db.ban[id] = Date.now() + (timeout * 1000);
     client.guilds.get(config.guild).members.get(id).addRole(config.role);
-    client.guilds.get(config.guild).members.get(id).removeRole(config.drole);
+    if (config.drole) client.guilds.get(config.guild).members.get(id).removeRole(config.drole);
     console.log(`${id} manually muted for ${timeout} seconds. `)
     try { client.guilds.get(config.guild).members.get(id).send(`You have been muted for ${timeout} seconds for sending a non-unique message.`) } catch (e) { }
 }
@@ -129,8 +133,16 @@ setInterval(() => {
         if (Date.now() > db.ban[id]) {
             delete db.ban[id];
             client.guilds.get(config.guild).members.get(id).removeRole(config.role);
-            client.guilds.get(config.guild).members.get(id).addRole(config.drole);
+            if (config.drole) client.guilds.get(config.guild).members.get(id).addRole(config.drole);
             console.log(`${id} unbanned.`);
         }
     })
 }, 1000)
+
+// Decay Nonces
+if (config.nonce)
+    setInterval(() => {
+        Object.keys(db.nonce).forEach(id => {
+            if (db.nonce[id] > 1) db.nonce[id] = db.nonce[id] - config.decay;
+        })
+    }, config.nonce * 60 * 60 * 1000)
