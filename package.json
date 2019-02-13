@@ -1,0 +1,24 @@
+{
+  "name": "discord-r9k",
+  "version": "1.0.0",
+  "description": "r9k implementation for discord including filtering down to unique letter combinations.",
+  "main": "index.js",
+  "dependencies": {
+    "discord.js": "^11.4.2",
+    "fluidb": "^0.2.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/n4ru/discord-r9k.git"
+  },
+  "author": "n4ru",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/n4ru/discord-r9k/issues"
+  },
+  "homepage": "https://github.com/n4ru/discord-r9k#readme"
+}
