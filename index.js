@@ -67,7 +67,7 @@ const mute = (msg) => {
     let timeout = (config.timeout * Math.pow(config.timeoutMultiplier, db.nonce[id]))
     db.ban[id] = Date.now() + (timeout * 1000);
     msg.member.addRole(config.role);
-    msg.member.removeRole(config.drole);
+    if (config.drole) msg.member.removeRole(config.drole);
     msg.delete();
     console.log(`${id} muted for ${timeout} seconds. Stored: ${seq}`)
     try { msg.author.send(`You have been muted for ${timeout} seconds for sending a non-unique message.`) } catch (e) { }
