@@ -114,7 +114,7 @@ const check = (msg) => {
 
 // Check New Messages and Edited Messages
 client.on('message', msg => {
-    if (config.mods.includes(msg.author.id)) {
+    if (config.mods.includes(msg.author.id) && /<@!?[0-9]*>/.test(msg.content)) {
         if (msg.content.includes("!mute")) forceMute(msg, tagRegex(msg));
         if (msg.content.includes("!nonce")) nonceSet(msg, tagRegex(msg));
         if (msg.content.includes("!unmute")) unmute(msg, tagRegex(msg));
@@ -143,6 +143,6 @@ setInterval(() => {
 if (config.nonce)
     setInterval(() => {
         Object.keys(db.nonce).forEach(id => {
-            if (db.nonce[id] > 1) db.nonce[id] = db.nonce[id] - config.decay;
+            if (db.nonce[id] > 1 && !db.ban[id]) db.nonce[id] = db.nonce[id] - config.decay;
         })
     }, config.nonce * 60 * 60 * 1000)
