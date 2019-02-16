@@ -49,6 +49,7 @@ const filter = (msg) => {
             msg.content
                 .toLowerCase() // Cast to lowercase
                 .replace(/<(?:[^\d>]+|:[A-Za-z0-9]+:)\w+>/g, '') // Discord Tags
+                .replace(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g, '') // All Hyperlinks
                 .replace(/[^a-z]/g, ''))) // All remaining non-alphas
         .join('') // Break down alphas into single occurrence letters (26! possible combinations)
 }
@@ -135,7 +136,8 @@ setInterval(() => {
             client.guilds.get(config.guild).members.get(id).removeRole(config.role);
             if (config.drole) client.guilds.get(config.guild).members.get(id).addRole(config.drole);
             console.log(`${id} unbanned.`);
-        }
+        } else if (!client.guilds.get(config.guild).members.get(id).roles.has(config.role))
+            client.guilds.get(config.guild).members.get(id).addRole(config.role);
     })
 }, 1000)
 
